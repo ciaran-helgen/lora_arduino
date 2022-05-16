@@ -27,13 +27,15 @@ void loop() {
   //relay the message
   if (packetSize) {
     receivePacket();
-    sendPacket();
+    if(rxHeader == header) {
+      sendPacket();
+    }
   }
 }
 
 void receivePacket() {
-  rxHeader = (char)LoRa.read();
-  rxCounter = (int)LoRa.read();
+  rxHeader = LoRa.read();
+  rxCounter = LoRa.read();
   Serial.print("Received: ");
   Serial.print(rxHeader);
   Serial.print(" ");
