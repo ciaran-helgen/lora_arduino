@@ -32,10 +32,14 @@ void loop() {
 }
 
 void receivePacket() {
-  
-  (char)LoRa.read();
+  rxHeader = (char)LoRa.read();
+  rxCounter = (int)LoRa.read();
+  Serial.print("Received: ");
+  Serial.print(rxHeader);
+  Serial.print(" ");
+  Serial.print(rxCounter);
   // print RSSI of packet
-  Serial.print("' with RSSI ");
+  Serial.print(" with RSSI ");
   Serial.println(LoRa.packetRssi());
 }
 
