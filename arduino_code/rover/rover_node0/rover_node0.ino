@@ -28,6 +28,7 @@ void setup() {
 void loop() {
   if (LoRa.parsePacket()) {
     receivePacket();
+    //only print if it has been rxMinInterval ms since last packet
     if (header == rxHeader && (millis() - lastRxTime > rxMinInterval)) {
        Serial.println(LoRa.packetRssi());
        lastRxTime = millis();
