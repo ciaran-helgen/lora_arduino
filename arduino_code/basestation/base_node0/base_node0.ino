@@ -1,57 +1,63 @@
 #include <SPI.h>
 #include <LoRa.h>
 
-int counter = 0;
-char header = '0';
+//#define USE_SERIAL //uncomment to enable serial readout. Code will block until serial is available
 
-char rxHeader = '^';
+int counter = 0;
+int header = 0xAA; //header for this pair of nodes
+
+int msg_rssi = 0;
+
+int rxHeader = 0x00; // header of incoming message
+
+// how often to ping the drone node
+int sendInterval = 100;
+// timestamp of last message sent
+int lastSendTime = 0;
+
 int rxCounter = 0;
 
+unsigned int cycles = 0;
+
+//flag to ignore duplicates
+bool sent_msg = false;
+
 void setup() {
+  #ifdef USE_SERIAL
   Serial.begin(9600);
   while (!Serial);
+  #endif
 
-  Serial.println("LoRa Receiver");
+  Serial.println("LoRa Sender");
 
   while (!LoRa.begin(868E6)) {
-      Serial.println("Starting LoRa failed!");
-      Serial.println("Retrying...");
-      delay(500);
-    }
-}
-
-void loop() {
-  // try to parse packet
-  int packetSize = LoRa.parsePacket();
-
-  //relay the message
-  if (packetSize) {
-    receivePacket();
-    if(rxHeader == header) {
-      sendPacket();
-    }
+    #ifdef USE_SERIAL
+    Serial.println("Starting LoRa failed!");
+    Serial.println("Retrying...");
+    #endif
+    delay(500);
   }
 }
 
-void receivePacket() {
-  rxHeader = LoRa.read();
-  rxCounter = LoRa.read();
-  Serial.print("Received: ");
-  Serial.print(rxHeader);
-  Serial.print(" ");
-  Serial.print(rxCounter);
-  // print RSSI of packet
-  Serial.print(" with RSSI ");
-  Serial.println(LoRa.packetRssi());
+void loop() {
+  if (millis() - lastSendTime > sendInterval) {
+    sendPacket();
+    //Serial.print("Sending ");
+    //Serial.println(counter);
+    lastSendTime = millis();
+    counter++;
+  }
 }
 
 void sendPacket() {
-  Serial.print("Sending packet: ");
-  Serial.println(rxCounter);
+  //Serial.print("Sending packet: ");
+  //Serial.println(counter);
 
   // send packet
   LoRa.beginPacket();
-  LoRa.print(rxHeader);
-  LoRa.print(rxCounter);
+  LoRa.write(header);
+  LoRa.write(counter);
   LoRa.endPacket();
+  counter++;
+
 }
