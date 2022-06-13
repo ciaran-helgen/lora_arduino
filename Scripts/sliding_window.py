@@ -27,8 +27,8 @@ init_coord = np.array((0, 0, 0)) # coordinate of first GPS message
 coord = np.array((0, 0, 0)) # current position
 
 rssi = 0
-med_filt_vals = []
-lp_rssi = 0
+
+lowpass_buf = [] #buffer for the low pass filter
 
 raw_buf = []
 median_buf = []
@@ -39,7 +39,7 @@ flush_msgs = 0
 
 f = None
 
-filt_alpha = 0.5
+filt_alpha = 0.1
 
 curr_time = None
 init_time = None
@@ -60,12 +60,15 @@ def main():
     global init_time
     global curr_time
     global filt_alpha
-    global med_filt_vals
+    global lowpass_buf
     global dist
     global rssi
 
     global arduino_buf
     global emlid_buf
+
+    st = None
+    last_st = None
     
     try:
         arduino_ser = serial.Serial(PORT0, BAUD_ARDUINO, timeout = 1)  # open arduino serial port
@@ -82,10 +85,11 @@ def main():
         
     try:
         f = open("test.csv", "a")
-        f.write("distance," + "rssi," +  "median," + "low pass" + '\r\n' )
+        f.write("time (s)," +"RSSI," + "median," + "low pass" + '\r\n' )
     except Exception as e:
         print(e)
         exit(1)
+        
     while 1:
         
         try:
@@ -142,12 +146,34 @@ def main():
                 median_rssi = median(map(float, column(0, arduino_buf)))
                 print(arduino_buf)
                 print("median: ", median_rssi)
+        
+                if last_st != None:
+                    st = filt_alpha*median_rssi + (1-filt_alpha)*last_st
+                    print("Last ST here")
+                else:
+                    st = filt_alpha*median_rssi + (1-filt_alpha)*median_rssi
+                last_st = st
+##                if len(lowpass_buf) < 2:
+##                    lowpass_buf.append(median_rssi)
+##                    lowpass_buf.append(median_rssi)
+##                else:
+##                    lowpass_buf.append(median_rssi)
+##                    lowpass_buf.pop(0)
+                #print("Lowpass: ", lowpass_buf)
+                #lp_rssi = filt_alpha*
+                print("Filtered: ", st, median_rssi)
 
                 #timestamp = emlid_buf[-1][0] + " " + emlid_buf[-1][1]                                                
                 #curr_time = datetime.strptime(timestamp, "%Y/%m/%d %H:%M:%S.%f")
                 curr_time =  datetime_from_emlid(emlid_buf)
                 elapsed_time = (curr_time - init_time).total_seconds()
                 print("Elapsed: ", elapsed_time)
+
+                print(arduino_buf[0])
+                print(arduino_buf[0][0])
+                
+                
+                f.write(str(elapsed_time) + "," + str(arduino_buf[0][-1]) + "," +  str(median_rssi) + "," + str(st) + '\r\n')
                 #print(init_coord)
                 #dist = median(np.linalg.norm(emlid_buf-init_coord)) #calculate displacement from initial position
                 #print(curr_time, init_time)
@@ -174,7 +200,7 @@ def main():
             
         # cat END to end of CSV to indicate end of test. Useful for running multiple tests!
         except KeyboardInterrupt as e:
-            f.write("END,END,END,END,END,END,END"+'\r\n' )
+            f.write("END,END,END"+'\r\n' )
             f.close()
             print("Pressed CTRL-C, exiting...")
             exit(1)
