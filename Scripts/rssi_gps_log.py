@@ -9,8 +9,8 @@ BAUD_EMLID = 9600 # Emlid baud
 BAUD_ARDUINO = 9600 # Arduino baud
 
 #depending on the order you plug in the devices, switch AMC1/AMC0 if an indexing error occurs
-PORT1 = "/dev/ttyACM1" #Emlid Port
-PORT0 = "/dev/ttyACM0" #Arduino Port
+PORT1 = "/dev/ttyACM0" #Emlid Port
+PORT0 = "/dev/ttyACM1" #Arduino Port
 
 elapsed_time = 0 #time elapsed since first message
 
@@ -77,9 +77,10 @@ def main():
                 #print(dist)
                 print(elapsed_time)
                 #print(rssi)
-                f.write(timestamp + "," + str(elapsed_time) + "," + str(init_coord[0]) +  "," + str(init_coord[1]) +  ","+ str(coord[0]) +  "," + str(coord[1]) +  "," +  rssi + '\r\n' )
-                
-            f.close() #close after each line is logged. This probably isn't necessary but I forgot to test. Speed bottleneck
+                #f.write(timestamp + "," + str(elapsed_time) + "," + str(init_coord[0]) +  "," + str(init_coord[1]) +  ","+ str(coord[0]) +  "," + str(coord[1]) +  "," + dist + rssi + '\r\n' )
+                f.write(str(dist) + str(rssi) + '\r\n' )
+     
+            #f.close() #close after each line is logged. This probably isn't necessary but I forgot to test. Speed bottleneck
             
         # cat END to end of CSV to indicate end of test. Useful for running multiple tests!
         except KeyboardInterrupt as e:
@@ -88,9 +89,11 @@ def main():
             print("Pressed CTRL-C, exiting...")
             exit(1)
         # any other exception
-        except Exception as e:
-            print(e)
-            exit(1)
+##        except Exception as e:
+##            f.write("END,END,END,END,END,END,END"+'\r\n' )
+##            f.close()
+##            print(e)
+##            exit(1)
 
 
 if __name__ == "__main__":

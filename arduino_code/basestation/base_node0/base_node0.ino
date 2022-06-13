@@ -11,7 +11,7 @@ int msg_rssi = 0;
 int rxHeader = 0x00; // header of incoming message
 
 // how often to ping the drone node
-int sendInterval = 100;
+int sendInterval = 20;
 // timestamp of last message sent
 int lastSendTime = 0;
 
