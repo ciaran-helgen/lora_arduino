@@ -11,16 +11,11 @@ int msg_rssi = 0;
 int rxHeader = 0x00; // header of incoming message
 
 // how often to ping the drone node
-int sendInterval = 190;
+int sendInterval = 200;
 // timestamp of last message sent
 int lastSendTime = 0;
 
 int rxCounter = 0;
-
-unsigned int cycles = 0;
-
-//flag to ignore duplicates
-bool sent_msg = false;
 
 void setup() {
   #ifdef USE_SERIAL

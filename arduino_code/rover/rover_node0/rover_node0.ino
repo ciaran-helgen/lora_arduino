@@ -19,10 +19,10 @@ unsigned int distance_cm;
 
 void setup() {
   
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial); //wait for serial to connect
 
-  while (!LoRa.begin(868E6)) { delay(500); } //loop until LoRa initialises
+  while (!LoRa.begin(868E6)) {delay(500); } //loop until LoRa initialises
 }
 
 void loop() {
@@ -30,7 +30,7 @@ void loop() {
     receivePacket();
     //only print if it has been rxMinInterval ms since last packet
     if (header == rxHeader && (millis() - lastRxTime > rxMinInterval)) {
-       Serial.println(LoRa.packetRssi());
+       Serial.print(String(LoRa.packetRssi())+ '\n');
        lastRxTime = millis();
     }
   }
