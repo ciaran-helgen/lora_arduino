@@ -1,77 +1,47 @@
 #include <SPI.h>
 #include <LoRa.h>
-//#include "SAMDTimerInterrupt.h"
 
-int counter = 0;
-int header = 0xAA;
+int header = 0xAA; //header for this pair of nodes
 
-// how often to ping the base node
-int sendInterval = 5000;
-// timestamp of last message sent
-int lastSendTime = 0;
+int msg_rssi = 0;
 
-byte rxHeader = 0xFF;
+int rxHeader = 0x00; //header of incoming message
+
+// how long to wait (millis) between received messages (avoid reflected duplicates)
+int rxMinInterval = 1;
+// millis timestamp of last message received
+int lastRxTime = 0;
+
 int rxCounter = 0;
-
-unsigned long propDelay = 0;
-
-// Init SAMD timer TIMER_TC3
-//SAMDTimer ITimer(TIMER_TC3);
+int nextCounter = 0;
+ 
+unsigned int distance_cm;
 
 void setup() {
-  Serial.begin(9600);
-  while (!Serial);
+  
+  Serial.begin(115200);
+  while (!Serial); //wait for serial to connect
 
-  Serial.println("LoRa Sender");
-
-  LoRa.begin(868E6);
-  delay(1000);
-
-//  while (!LoRa.begin(868E6)) {
-//    Serial.println("Starting LoRa failed!");
-//    Serial.println("Retrying...");
-//    delay(500);
-//  }
+  while (!LoRa.begin(868E6)) {delay(500); } //loop until LoRa initialises
 }
 
 void loop() {
-  if (millis() - lastSendTime > sendInterval) {
-    sendPacket();
-    lastSendTime = millis(); 
-  }
   if (LoRa.parsePacket()) {
-    propDelay = millis() - (unsigned long)lastSendTime;
     receivePacket();
-    //if(rxHeader == header) {
-    Serial.print("propagation delay: ");
-    Serial.println(propDelay);
-    //}
+    //only print if it has been rxMinInterval ms since last packet
+    if (header == rxHeader && (millis() - lastRxTime > rxMinInterval)) {
+       Serial.print(String(LoRa.packetRssi())+ '\n');
+       lastRxTime = millis();
+    }
   }
-}
-
-void sendPacket() {
-  Serial.print("Sending packet: ");
-  Serial.println(counter);
-
-  // send packet
-  LoRa.beginPacket();
-  LoRa.print(header);
-  LoRa.print(counter);
-  LoRa.endPacket();
-
-  counter++;
-
 }
 
 void receivePacket() {
-  
+  //Serial.println("at receive :" + (String)cycles);
   rxHeader = (int)LoRa.read();
   rxCounter = (int)LoRa.read();
-  Serial.print("Received: ");
-  Serial.print(rxHeader, HEX);
-  Serial.print(" ");
-  Serial.print(rxCounter, DEC);
-  // print RSSI of packet
-  Serial.print(" with RSSI ");
-  Serial.println(LoRa.packetRssi());
+  msg_rssi = LoRa.rssi();
+  //Serial.print("received header: ");
+  //Serial.println(rxHeader, HEX);
+
 }
